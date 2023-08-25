@@ -1,0 +1,1 @@
+DEBUG=* node src/cli.js --path .raft/data2 --id id2 --port 8051 --peers '[{"id":"id1", "url":"tcp://192.168.86.210:8041"}, {"id":"id2", "url":"tcp://192.168.86.210:8051"}, {"id":"id3", "url":"tcp://192.168.86.210:8061"}]'
