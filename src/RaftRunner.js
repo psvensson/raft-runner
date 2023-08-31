@@ -9,21 +9,44 @@ module.exports = class RaftRunner {
         console.log('-------------------- builder options: ', options)
         raft.server.builder.build(options).then(zmqRaft => {
             this.zmqRaft = zmqRaft;
-            const peers = this.zmqRaft.peers;
-            console.log('raft peers: ', peers)            
+            const raftPeers = this.zmqRaft.cluster.ocluster;
+            //console.log('raft cluster: ', raftPeers)       
+            console.log('raft cluster kyes: ', raftPeers.keys())
+            // If our id is not in the peers array, send configUpdate rpc
+            setTimeout(() => {
+                if (!this.isMember(id, raftPeers)) {
+                    console.log('--- sending config update')
+                    const requestId = raft.utils.id.genIdent();
+                    const ipAddr = this.getExternalIp()
+                    const newPeers = peers.push(this.getPeerObjectFor(id, ipAddr, port))
+                    console.log('--- newPpeers: ', peers)
+                    this.client.configUpdate(requestId, peers, 5000)
+                }
+            }, 1000)
+
         });
         // DEBUG
         setInterval(this.handleInterval.bind(this), 15000)
         // ------------------------
-        const clientSeedPeers = peers.map(peer=>peer.url)
+        const clientSeedPeers = peers.map(peer => peer.url)
         this.client = new raft.client.ZmqRaftClient(clientSeedPeers, {
             secret: '', lazy: true, heartbeat: 5000
         });
-        
+
+    }
+
+    isMember(id, peers) {
+        let isMember = false
+        console.log('peers keys:', peers.keys())
+        for (var entry of peers.entries()) {
+            const pid = entry[0]
+            if (pid === id) isMember = true
+        }
+        return isMember
     }
 
     handleInterval() {
-        console.log('--- handleInterval role is; ',this.raftState.toString())
+        console.log('--- handleInterval role is; ', this.raftState.toString())
         if (this.raftState.toString() === 'Symbol(Leader)') {
             // Send sample message throught the client
             console.log('--- sending message to all peers')
@@ -42,12 +65,19 @@ module.exports = class RaftRunner {
         const logIndex = await this.client.requestUpdate(requestId, serializedTxData);
     }
 
+    getPeerObjectFor(id, ipAddr, port){
+        const myAddr = this.getUrlFor(ipAddr, port)
+        const myWWW = this.getUrlFor(ipAddr, parseInt(port) + 1)
+        const myPub = this.getUrlFor(ipAddr, parseInt(port) + 2)
+        return { id: id, url: myAddr, www: myWWW, pub: myPub }
+    }
+
     getOptions(id, path, port, peers, stateHandler) {
         const ipAddr = this.getExternalIp()
         const myAddr = this.getUrlFor(ipAddr, port)
         const myWWW = this.getUrlFor(ipAddr, parseInt(port) + 1)
         const myPub = this.getUrlFor(ipAddr, parseInt(port) + 2)
-        const defaultPeers = [{ id: "id1", url: myAddr, www: myWWW, pub: myPub }]
+        const defaultPeers = [this.getPeerObjectFor(id, ipAddr, port)]
         const options = {
             id: id,
             secret: "",
@@ -70,7 +100,7 @@ module.exports = class RaftRunner {
                     return new RunnerStateMachine(options)
                 }
             },
-            listeners:{
+            listeners: {
                 state: this.handleRaftState.bind(this)
             }
         }
