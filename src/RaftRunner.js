@@ -4,35 +4,35 @@ const { listeners } = require('process');
 
 module.exports = class RaftRunner {
     constructor(id, path, port, peers, stateHandler) {
-        this.setUpProcessHandlers()
-        const options = this.getOptions(id, path, port, peers, stateHandler)
-        console.log('-------------------- builder options: ', options)
+        this.setUpProcessHandlers()        
+        const options = this.getOptions(id, path, port, peers, stateHandler);
+        this.buildZmqRaft(options, port, id, peers);
+        this.setIntervalForDebugging();
+        this.createZmqRaftClient(peers);
+    }
+
+    buildZmqRaft(options, port, id, peers) {
         raft.server.builder.build(options).then(zmqRaft => {
             this.zmqRaft = zmqRaft;
             const raftPeers = this.zmqRaft.cluster.ocluster;
-            //console.log('raft cluster: ', raftPeers)       
-            console.log('raft cluster kyes: ', raftPeers.keys())
-            // If our id is not in the peers array, send configUpdate rpc
-            setTimeout(() => {
-                if (!this.isMember(id, raftPeers)) {
-                    console.log('--- sending config update')
-                    const requestId = raft.utils.id.genIdent();
-                    const ipAddr = this.getExternalIp()
-                    const newPeers = peers.push(this.getPeerObjectFor(id, ipAddr, port))
-                    console.log('--- newPpeers: ', peers)
-                    this.client.configUpdate(requestId, peers, 5000)
-                }
-            }, 1000)
-
+            if (!this.isMember(id, raftPeers)) {
+                const requestId = raft.utils.id.genIdent();
+                const ipAddr = this.getExternalIp();
+                const newPeers = peers.push(this.getPeerObjectFor(id, ipAddr, port));
+                this.client.configUpdate(requestId, peers, 5000);
+            }
         });
-        // DEBUG
-        setInterval(this.handleInterval.bind(this), 15000)
-        // ------------------------
-        const clientSeedPeers = peers.map(peer => peer.url)
+    }
+
+    setIntervalForDebugging() {
+        setInterval(this.handleInterval.bind(this), 15000);
+    }
+
+    createZmqRaftClient(peers) {
+        const clientSeedPeers = peers.map(peer => peer.url);
         this.client = new raft.client.ZmqRaftClient(clientSeedPeers, {
             secret: '', lazy: true, heartbeat: 5000
         });
-
     }
 
     isMember(id, peers) {
@@ -65,7 +65,7 @@ module.exports = class RaftRunner {
         const logIndex = await this.client.requestUpdate(requestId, serializedTxData);
     }
 
-    getPeerObjectFor(id, ipAddr, port){
+    getPeerObjectFor(id, ipAddr, port) {
         const myAddr = this.getUrlFor(ipAddr, port)
         const myWWW = this.getUrlFor(ipAddr, parseInt(port) + 1)
         const myPub = this.getUrlFor(ipAddr, parseInt(port) + 2)
