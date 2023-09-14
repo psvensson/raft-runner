@@ -1,24 +1,25 @@
 const raft = require('zmq-raft');
 const RunnerStateMachine = require('./RunnerStatemachine');
 const { listeners } = require('process');
+let incid = 0
 
 module.exports = class RaftRunner {
     constructor(id, path, port, peers, stateHandler) {
+        this.stateHandler = stateHandler
         this.setUpProcessHandlers()        
         const options = this.getOptions(id, path, port, peers, stateHandler);
-        this.buildZmqRaft(options, port, id, peers);
+        this.buildZmqRaft(options, id, peers);
         this.setIntervalForDebugging();
         this.createZmqRaftClient(peers);
     }
 
-    buildZmqRaft(options, port, id, peers) {
+    buildZmqRaft(options, id, peers) {
+        const runner = this;
         raft.server.builder.build(options).then(zmqRaft => {
-            this.zmqRaft = zmqRaft;
+            runner.zmqRaft = zmqRaft;
             const raftPeers = this.zmqRaft.cluster.ocluster;
-            if (!this.isMember(id, raftPeers)) {
+            if (!raftPeers.has(id)) {
                 const requestId = raft.utils.id.genIdent();
-                const ipAddr = this.getExternalIp();
-                const newPeers = peers.push(this.getPeerObjectFor(id, ipAddr, port));
                 this.client.configUpdate(requestId, peers, 5000);
             }
         });
@@ -35,23 +36,20 @@ module.exports = class RaftRunner {
         });
     }
 
-    isMember(id, peers) {
-        let isMember = false
-        console.log('peers keys:', peers.keys())
-        for (var entry of peers.entries()) {
-            const pid = entry[0]
-            if (pid === id) isMember = true
-        }
-        return isMember
-    }
-
+    // This is a debug function jsut to see if state ges passed along to replicas (and us)
     handleInterval() {
         console.log('--- handleInterval role is; ', this.raftState.toString())
         if (this.raftState.toString() === 'Symbol(Leader)') {
-            // Send sample message throught the client
-            console.log('--- sending message to all peers')
-            this.clientSend('hello world')
+            
+            this.changeStateMachineState({id: incid++, value: 'foobar'})
         }
+    }
+
+    // This is the way to send something to the state machine that means something to it
+    changeStateMachineState(data) {
+        // Not needed since we also get the state applied to us
+        //this.stateHandler.setState(id, value)
+        this.clientSend(data)
     }
 
     handleRaftState(state, term) {
@@ -73,6 +71,7 @@ module.exports = class RaftRunner {
     }
 
     getOptions(id, path, port, peers, stateHandler) {
+        const runner = this;
         const ipAddr = this.getExternalIp()
         const myAddr = this.getUrlFor(ipAddr, port)
         const myWWW = this.getUrlFor(ipAddr, parseInt(port) + 1)
@@ -97,7 +96,9 @@ module.exports = class RaftRunner {
             factory: {
                 state: (options) => {
                     options.stateHandler = stateHandler;
-                    return new RunnerStateMachine(options)
+                    options.runner = runner;
+                    this.runnerStateMachine = new RunnerStateMachine(options);
+                    return this.runnerStateMachine
                 }
             },
             listeners: {
