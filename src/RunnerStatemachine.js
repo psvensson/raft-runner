@@ -39,6 +39,7 @@ module.exports = class RunnerStateMachine extends raft.api.StateMachineBase {
     for (let [index, item] of logEntries.entries()) {
       const entry = BaseEntry.getEntry(item, nextIndex + index);
       console.log('===== applyEntries, entryType is: ', entry.entryType)
+      // Some nice polymorphic OO going on here, avert your eyes, kids
       entryTypes[entry.entryType].apply(item, this);
     }
     return super.applyEntries(logEntries, nextIndex, currentTerm, snapshot);

@@ -7,6 +7,7 @@ module.exports = class SimpleStateHandler {
 
     handle(data) {
         console.log("SimpleStateHandler handle: " + data);
+        this.setState(data.id, data.value)
     }
 
     handleSnapshot(data) {

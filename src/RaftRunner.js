@@ -6,7 +6,7 @@ let incid = 0
 module.exports = class RaftRunner {
     constructor(id, path, port, peers, stateHandler) {
         this.stateHandler = stateHandler
-        this.setUpProcessHandlers()        
+        this.setUpProcessHandlers()
         const options = this.getOptions(id, path, port, peers, stateHandler);
         this.buildZmqRaft(options, id, peers, port);
         this.setIntervalForDebugging();
@@ -18,17 +18,13 @@ module.exports = class RaftRunner {
         raft.server.builder.build(options).then(zmqRaft => {
             runner.zmqRaft = zmqRaft;
             const raftPeers = this.zmqRaft.cluster.ocluster;
-            
-            setTimeout(() => {
-                // If we are joining an existing cluster, we need to add our address to the peers list
-                if (!raftPeers.has(id)) {
-                    const newPeers = [...peers, this.getPeerObjectFor(id, this.getExternalIp(), port)]
-                    console.dir(newPeers)
-                    const requestId = raft.utils.id.genIdent();
-                    this.client.configUpdate(requestId, newPeers, 5000);
-                }
-            }, 1500)
-            
+            // If we are joining an existing cluster, we need to add our address to the peers list
+            if (!raftPeers.has(id)) {
+                const newPeers = [...peers, this.getPeerObjectFor(id, this.getExternalIp(), port)]
+                console.dir(newPeers)
+                const requestId = raft.utils.id.genIdent();
+                this.client.configUpdate(requestId, newPeers, 5000);
+            }
         });
     }
 
@@ -46,13 +42,13 @@ module.exports = class RaftRunner {
     // This is a debug function jsut to see if state ges passed along to replicas (and us)
     handleInterval() {
         console.log('--- handleInterval role is; ', this.raftState.toString())
-        if (this.raftState.toString() === 'Symbol(Leader)') {            
-            this.changeStateMachineState({id: incid++, value: 'foobar'})
+        if (this.raftState.toString() === 'Symbol(Leader)') {
+            this.changeStateMachine({ id: incid++, value: 'foobar' })
         }
     }
 
     // This is the way to send something to the state machine that means something to it
-    changeStateMachineState(data) {
+    changeStateMachine(data) {
         // Not needed since we also get the state applied to us
         //this.stateHandler.setState(id, value)
         this.clientSend(data)
