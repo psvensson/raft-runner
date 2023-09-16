@@ -8,20 +8,27 @@ module.exports = class RaftRunner {
         this.stateHandler = stateHandler
         this.setUpProcessHandlers()        
         const options = this.getOptions(id, path, port, peers, stateHandler);
-        this.buildZmqRaft(options, id, peers);
+        this.buildZmqRaft(options, id, peers, port);
         this.setIntervalForDebugging();
         this.createZmqRaftClient(peers);
     }
 
-    buildZmqRaft(options, id, peers) {
+    buildZmqRaft(options, id, peers, port) {
         const runner = this;
         raft.server.builder.build(options).then(zmqRaft => {
             runner.zmqRaft = zmqRaft;
             const raftPeers = this.zmqRaft.cluster.ocluster;
-            if (!raftPeers.has(id)) {
-                const requestId = raft.utils.id.genIdent();
-                this.client.configUpdate(requestId, peers, 5000);
-            }
+            
+            setTimeout(() => {
+                // If we are joining an existing cluster, we need to add our address to the peers list
+                if (!raftPeers.has(id)) {
+                    const newPeers = [...peers, this.getPeerObjectFor(id, this.getExternalIp(), port)]
+                    console.dir(newPeers)
+                    const requestId = raft.utils.id.genIdent();
+                    this.client.configUpdate(requestId, newPeers, 5000);
+                }
+            }, 1500)
+            
         });
     }
 
@@ -39,8 +46,7 @@ module.exports = class RaftRunner {
     // This is a debug function jsut to see if state ges passed along to replicas (and us)
     handleInterval() {
         console.log('--- handleInterval role is; ', this.raftState.toString())
-        if (this.raftState.toString() === 'Symbol(Leader)') {
-            
+        if (this.raftState.toString() === 'Symbol(Leader)') {            
             this.changeStateMachineState({id: incid++, value: 'foobar'})
         }
     }
