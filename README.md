@@ -40,7 +40,8 @@ If our port and address does not exist in the provided lsit of existing peers, t
 
 This methods sends a new log using the underlying Raft cluster, which relicates some kind of command that makes sense to your state machine
 
-```class myStateMachine {
+```
+class myStateMachine {
     handle(data) {
         // Interpret a log entry send from our own or a remote peer using changeStateMachine() in the Runner above
     }
@@ -59,7 +60,9 @@ This methods sends a new log using the underlying Raft cluster, which relicates 
         // Used by zmq-raft in certain cirumstance. Needs also to be implemented. Essential does the same thing as the above readstram thing,
         but returns all of the satte in one go.
     }
-}```
+}
+```
+
 
 ## Installation
 
