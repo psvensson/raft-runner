@@ -1,7 +1,6 @@
 const raft = require('zmq-raft');
 const RunnerStateMachine = require('./RunnerStatemachine');
 const { listeners } = require('process');
-let incid = 0
 
 module.exports = class RaftRunner {
     constructor(id, path, port, peers, stateHandler) {
@@ -9,7 +8,6 @@ module.exports = class RaftRunner {
         this.setUpProcessHandlers()
         const options = this.getOptions(id, path, port, peers, stateHandler);
         this.buildZmqRaft(options, id, peers, port);
-        this.setIntervalForDebugging();
         this.createZmqRaftClient(peers);
     }
 
@@ -28,10 +26,6 @@ module.exports = class RaftRunner {
         });
     }
 
-    setIntervalForDebugging() {
-        setInterval(this.handleInterval.bind(this), 15000);
-    }
-
     createZmqRaftClient(peers) {
         const clientSeedPeers = peers.map(peer => peer.url);
         this.client = new raft.client.ZmqRaftClient(clientSeedPeers, {
@@ -39,12 +33,8 @@ module.exports = class RaftRunner {
         });
     }
 
-    // This is a debug function jsut to see if state ges passed along to replicas (and us)
-    handleInterval() {
-        console.log('--- handleInterval role is; ', this.raftState.toString())
-        if (this.raftState.toString() === 'Symbol(Leader)') {
-            this.changeStateMachine({ id: incid++, value: 'foobar' })
-        }
+    isLeader() {
+        return this.raftState.toString() === 'Symbol(Leader)'
     }
 
     // This is the way to send something to the state machine that means something to it

@@ -15,4 +15,14 @@ console.log('peers = ',arg_peers);
 console.log('port = '+arg_port);
 console.log('id = '+arg_id);
 
-new RaftRunner(arg_id, arg_path, arg_port, arg_peers, new SimpleStateHandler());
+let incid = 0
+
+const raftRunner = new RaftRunner(arg_id, arg_path, arg_port, arg_peers, new SimpleStateHandler());
+
+// This is jsut a debug method to check that state is set on the leader (and then of course replicated to the replicas)
+setInterval(()=> {
+    console.log('--- handleInterval role is; ', raftRunner.raftState.toString())
+    if (raftRunner.isLeader()) {
+        raftRunner.changeStateMachine({ id: incid++, value: 'foobar' })
+    }
+}, 15000);
