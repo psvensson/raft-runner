@@ -31,10 +31,13 @@ You think this is complicated? Not in comparison :D
 
 ## API
 Create a new RaftRunner instance (a Peer in the Raft cluster)
+
 ```const raftRunner = new RaftRunner(our_id, local_dir_path, our_port, raft_peers, stateHandler);```
+
 If our port and address does not exist in the provided lsit of existing peers, this is taken as an instruction for us to join an existing raft cluster as a new member.
 
 ```raftRunner.changeStateMachine(data)```
+
 This methods sends a new log using the underlying Raft cluster, which relicates some kind of command that makes sense to your state machine
 
 ```class myStateMachine {
