@@ -17,9 +17,9 @@ Raft uses something called Log entries, which are essentialy commands which has 
 
 Let's say that you have already done all the work described here and have a Raft group consisting of three Peers (which is the minimum for things to work) and your own state machine implementation.
 
-Then one of the peers gets a request from a client (it might also have a web service interface), which results in some data should be written to the database. Instead of writing directly to the database, the peer instance (where you have instantiated the RaftRunner object) uses the changeStateMachine() method to create a new log entry (which we assume will tell your state machine to write data to the databse).
+Then one of the peers gets a request from a client (it might also have a web service interface), which results in some data that should be written to the database. Instead of writing directly to the database, the peer instance (where you have instantiated the RaftRunner object) uses the changeStateMachine() method to create a new log entry (which we assume will tell your state machine to write data to the database).
 
-The underlying logic will then call the handle() method on all three peers (including the instanjce we are talking about now) which will handle the log entry. It could be something simple like this: {command: 'write', data: [...]}. See the SimpleStateMachine class for an example.
+The underlying logic will then call the handle() method on all three peers (including the instance we are talking about now) which will handle the log entry. It could be something simple like this: {command: 'write', data: [...]}. See the SimpleStateMachine class for an example.
 
 The state machine also need implement the methods createSnapshotReadStream() and serialize() so that snapshots of the data can be created at regular intervals (otherwise the log files would grow and grow and grow and..). It also needs to implement a receiving handleSnapshot() method which is called when a peer receive a snapshot.
 
@@ -69,7 +69,7 @@ class myStateMachine {
 
 ## Testing
 Four test scripts has been provided, which assumes that they are run from the root-directory, like './src/start1.sh' et.c.
-The first three scriupts create three raft peers that form a cluster on the local machine, and the third demonstrates how to join the existing cluster (to be run after the first three scrpts has run) with a new, fourth peer.
+The first three scripts create three raft peers that form a cluster on the local machine, and the third demonstrates how to join the existing cluster (to be run after the first three scrpts has run) with a new, fourth peer.
 
 You can see the current state of the cluster by goin to the web interface provided by the underlying zmq-raft project at localhost:8042
 
