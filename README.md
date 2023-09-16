@@ -57,8 +57,8 @@ class myStateMachine {
     }
 
     serialize() {
-        // Used by zmq-raft in certain cirumstance. Needs also to be implemented. Essential does the same thing as the above readstram thing,
-        but returns all of the satte in one go.
+        // Used by zmq-raft in certain cirumstances. Needs also to be implemented. Essential does the same thing as the above readstram thing,
+        // but returns all of the satte in one go.
     }
 }
 ```
