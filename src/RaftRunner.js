@@ -12,6 +12,7 @@ module.exports = class RaftRunner {
     }
 
     buildZmqRaft(options, id, peers, port) {
+        console.log('buildZmqRaft, options = ', options)
         const runner = this;
         raft.server.builder.build(options).then(zmqRaft => {
             runner.zmqRaft = zmqRaft;
@@ -63,6 +64,7 @@ module.exports = class RaftRunner {
     }
 
     getOptions(id, path, port, peers, stateHandler) {
+        //console.log('getOptions, peers = ', peers)
         const runner = this;
         const ipAddr = this.getExternalIp()
         const myAddr = this.getUrlFor(ipAddr, port)
@@ -97,7 +99,7 @@ module.exports = class RaftRunner {
                 state: this.handleRaftState.bind(this)
             }
         }
-        if (options.peers[0].www) {
+        if (options.peers[0] && options.peers[0].www) {
             options.webmonitor = { enable: true, host: ipAddr, port: parseInt(port) + 1 }
         }
         return options

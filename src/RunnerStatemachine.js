@@ -20,6 +20,7 @@ module.exports = class RunnerStateMachine extends raft.api.StateMachineBase {
     this.initStateMachine().then(() => {
       this.stateHandler = options.stateHandler
       this.runner = options.runner;
+      this.snapshotInterval = options.snapshotInterval || 1000;
       console.log('///////////////////////// constructor options are ', options)
       this.raft = options.runner.zmqRaft;
       this[Symbol.for('setReady')]();
@@ -43,6 +44,15 @@ module.exports = class RunnerStateMachine extends raft.api.StateMachineBase {
       entryTypes[entry.entryType].apply(item, this);
     }
     return super.applyEntries(logEntries, nextIndex, currentTerm, snapshot);
+  }
+
+  checkForSnapshort(entry){
+    if (entry.logIndex & this.snapshotInterval && runner.isLeader()) {
+      console.log('--- creating snapshot')
+      stateMachine.createSnapshot().then(() => {
+          console.log('--- snapshot created')
+      })
+  }
   }
 
   async createSnapshot() {

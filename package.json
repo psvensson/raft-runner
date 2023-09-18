@@ -4,7 +4,7 @@
   "description": "",
   "main": "src/index.js",
   "scripts": {
-    "test": "npx run jest"
+    "test": "jest"
   },
   "repository": {
     "type": "git",
