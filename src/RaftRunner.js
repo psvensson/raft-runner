@@ -3,10 +3,10 @@ const RunnerStateMachine = require('./RunnerStatemachine');
 const { listeners } = require('process');
 
 module.exports = class RaftRunner {
-    constructor(id, path, port, peers, stateHandler) {
+    constructor(id, path, port, peers, stateHandler, ipAddress) {
         this.stateHandler = stateHandler
         this.setUpProcessHandlers()
-        const options = this.getOptions(id, path, port, peers, stateHandler);
+        const options = this.getOptions(id, path, port, peers, stateHandler, ipAddress);
         this.buildZmqRaft(options, id, peers, port);
         this.createZmqRaftClient(peers);
     }
@@ -48,12 +48,14 @@ module.exports = class RaftRunner {
     handleRaftState(state, term) {
         console.log('--- handleRaftState: ', state, term)
         this.raftState = state
+        this.runnerStateMachine.stateHandler.raftStateChanged(state)
     }
 
     async clientSend(text) {
         const serializedTxData = Buffer.from(JSON.stringify(text));
         const requestId = raft.utils.id.genIdent();
         const logIndex = await this.client.requestUpdate(requestId, serializedTxData);
+
     }
 
     getPeerObjectFor(id, ipAddr, port) {
@@ -63,10 +65,10 @@ module.exports = class RaftRunner {
         return { id: id, url: myAddr, www: myWWW, pub: myPub }
     }
 
-    getOptions(id, path, port, peers, stateHandler) {
+    getOptions(id, path, port, peers, stateHandler, ipAddress) {
         //console.log('getOptions, peers = ', peers)
         const runner = this;
-        const ipAddr = this.getExternalIp()
+        const ipAddr = ipAddress || this.getExternalIp()
         const myAddr = this.getUrlFor(ipAddr, port)
         const myWWW = this.getUrlFor(ipAddr, parseInt(port) + 1)
         const myPub = this.getUrlFor(ipAddr, parseInt(port) + 2)

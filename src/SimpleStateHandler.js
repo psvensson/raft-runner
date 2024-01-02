@@ -10,6 +10,10 @@ module.exports = class SimpleStateHandler {
         this.setState(data.id, data.value)
     }
 
+    raftStateChanged(state){
+        console.log('SimpleStateHandler --- raftStateChanged: ', state)
+    }
+
     handleSnapshot(data) {
         console.log("SimpleStateHandler handleSnapshot: " + data);
     }

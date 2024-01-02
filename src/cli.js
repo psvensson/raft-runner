@@ -10,6 +10,7 @@ const arg_path = argv.path || ".raft/data";
 const arg_id = argv.id || "id1";
 const arg_port = argv.port || 8047;
 const arg_peers = argv.peers ? JSON.parse(argv.peers) : undefined
+const ipAddress = argv.ip ?  argv.ip : undefined
 
 console.log('peers = ',arg_peers);
 console.log('port = '+arg_port);
@@ -17,7 +18,7 @@ console.log('id = '+arg_id);
 
 let incid = 0
 
-const raftRunner = new RaftRunner(arg_id, arg_path, arg_port, arg_peers, new SimpleStateHandler());
+const raftRunner = new RaftRunner(arg_id, arg_path, arg_port, arg_peers, new SimpleStateHandler(), ipAddress);
 
 // This is jsut a debug method to check that state is set on the leader (and then of course replicated to the replicas)
 setInterval(()=> {
@@ -25,4 +26,4 @@ setInterval(()=> {
     if (raftRunner.isLeader()) {
         raftRunner.changeStateMachine({ id: incid++, value: 'foobar' })
     }
-}, 15000);
+}, 5000);

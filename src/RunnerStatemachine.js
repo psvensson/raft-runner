@@ -1,5 +1,6 @@
 const raft = require('zmq-raft');
-
+const path = require('path')
+const FileLog = raft.server.FileLog
 const BaseEntry = require('./logentries/baseEntry')
 /*
 ** Implicity entry types used as order in the array below for object lookup later, but not really used here.
@@ -43,19 +44,21 @@ module.exports = class RunnerStateMachine extends raft.api.StateMachineBase {
       // Some nice polymorphic OO going on here, avert your eyes, kids
       entryTypes[entry.entryType].apply(item, this);
     }
+    this.checkForSnapshot(logEntries[logEntries.length - 1]);
     return super.applyEntries(logEntries, nextIndex, currentTerm, snapshot);
   }
 
-  checkForSnapshort(entry){
-    if (entry.logIndex & this.snapshotInterval && runner.isLeader()) {
+  checkForSnapshot(entry){
+    console.log('------------------------------------------- checking for snapshot. logIndex is: '+entry.logIndex+' and snapshotInterval is: '+this.snapshotInterval+' and isLeader is: '+this.runner.isLeader()+' entry.logIndex % 5 = '+(entry.logIndex % 5))
+    if (entry.logIndex % 5 === 0 & this.snapshotInterval > 0 && this.runner.isLeader()) {
       console.log('--- creating snapshot')
-      stateMachine.createSnapshot().then(() => {
+      this.createSnapshot(entry.logIndex).then(() => {
           console.log('--- snapshot created')
       })
   }
   }
 
-  async createSnapshot() {
+  async createSnapshot(logIndex) {
     const raft = this.runner.zmqRaft
     const compactionIndex = Math.min(raft.commitIndex, raft.pruneIndex);
     console.log('+++ createSnapshot compactionIndex: ', compactionIndex)
@@ -65,6 +68,23 @@ module.exports = class RunnerStateMachine extends raft.api.StateMachineBase {
     const readStream = this.stateHandler.createSnapshotReadStream();
     const snapshot = raft._log.createTmpSnapshot(compactionIndex, compactionTerm, readStream);
     const filename = await raft._log.installSnapshot(snapshot, true);
+    console.log('-------------------------------- old snapshot file names: ')
+    await this.listPruneFiles(raft._log, logIndex);
   }
 
+  listPruneFiles(fileLog, lastIndex) {
+    return fileLog.findIndexFilePathOf(lastIndex)
+    .then(lastPath => {
+      console.log('=== lastPath is: ', lastPath)
+      if (!lastPath) return;
+      var lastName = path.basename(lastPath);
+      return FileLog.readIndexFileNames(fileLog.logdir, (filePath) => {
+        console.log('++++++ checking filename '+filePath)
+        if (path.basename(filePath) < lastName) {
+          process.stdout.write('******* can delete: '+filePath + "\n");
+          return true;
+        }
+      });
+    });
+  }
 }
