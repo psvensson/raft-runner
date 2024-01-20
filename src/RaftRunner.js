@@ -3,10 +3,11 @@ const RunnerStateMachine = require('./RunnerStatemachine');
 const { listeners } = require('process');
 
 module.exports = class RaftRunner {
-    constructor(id, path, port, peers, stateHandler, ipAddress) {
+    constructor(args) {
+        const { id, path, port, peers, stateHandler, ipAddress, snapshotInterval } = args;
         this.stateHandler = stateHandler
         this.setUpProcessHandlers()
-        const options = this.getOptions(id, path, port, peers, stateHandler, ipAddress);
+        const options = this.getOptions(id, path, port, peers, stateHandler, ipAddress, snapshotInterval);
         this.buildZmqRaft(options, id, peers, port);
         this.createZmqRaftClient(peers);
     }
@@ -65,7 +66,7 @@ module.exports = class RaftRunner {
         return { id: id, url: myAddr, www: myWWW, pub: myPub }
     }
 
-    getOptions(id, path, port, peers, stateHandler, ipAddress) {
+    getOptions(id, path, port, peers, stateHandler, ipAddress, snapshotInterval) {
         //console.log('getOptions, peers = ', peers)
         const runner = this;
         const ipAddr = ipAddress || this.getExternalIp()
@@ -93,6 +94,7 @@ module.exports = class RaftRunner {
                 state: (options) => {
                     options.stateHandler = stateHandler;
                     options.runner = runner;
+                    options.snapshotInterval = snapshotInterval;
                     this.runnerStateMachine = new RunnerStateMachine(options);
                     return this.runnerStateMachine
                 }

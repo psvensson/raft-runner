@@ -22,6 +22,7 @@ module.exports = class RunnerStateMachine extends raft.api.StateMachineBase {
       this.stateHandler = options.stateHandler
       this.runner = options.runner;
       this.snapshotInterval = options.snapshotInterval || 1000;
+      this.entriesSinceLastSnapshot = 0
       console.log('///////////////////////// constructor options are ', options)
       this.raft = options.runner.zmqRaft;
       this[Symbol.for('setReady')]();
@@ -31,10 +32,10 @@ module.exports = class RunnerStateMachine extends raft.api.StateMachineBase {
   async initStateMachine() {
     console.log('--- intializing runner state machine')
   }
-  
+
   applyEntries(logEntries, nextIndex, currentTerm, snapshot) {
-    console.log('===== applyEntries, we got '+logEntries.length+' log entries, snapshot is: ', snapshot)
-    if(snapshot) {
+    console.log('===== applyEntries, we got ' + logEntries.length + ' log entries, snapshot is: ', snapshot)
+    if (snapshot) {
       console.log('===== applyEntries, snapshot is: ', snapshot)
       this.stateHandler.handleSnapshot(snapshot);
     }
@@ -48,43 +49,63 @@ module.exports = class RunnerStateMachine extends raft.api.StateMachineBase {
     return super.applyEntries(logEntries, nextIndex, currentTerm, snapshot);
   }
 
-  checkForSnapshot(entry){
-    console.log('------------------------------------------- checking for snapshot. logIndex is: '+entry.logIndex+' and snapshotInterval is: '+this.snapshotInterval+' and isLeader is: '+this.runner.isLeader()+' entry.logIndex % 5 = '+(entry.logIndex % 5))
-    if (entry.logIndex % 5 === 0 & this.snapshotInterval > 0 && this.runner.isLeader()) {
+  
+  checkForSnapshot(entry) {
+    //console.log('------------------------------------------- checking for snapshot. Entry; ', entry)
+    if(entry) {
+      this.entriesSinceLastSnapshot++
+      console.log('------------------------------------------- checking for snapshot. logIndex is: ' + entry.logIndex + ' and snapshotInterval is: ' + this.snapshotInterval + ' and isLeader is: ' + this.runner.isLeader() + ' entry.logIndex % 5 = ' + (entry.logIndex % 5))
+    if (this.entriesSinceLastSnapshot > this.snapshotInterval && this.runner.isLeader()) {
       console.log('--- creating snapshot')
       this.createSnapshot(entry.logIndex).then(() => {
-          console.log('--- snapshot created')
+        this.entriesSinceLastSnapshot = 0
+        console.log('--- snapshot created')
       })
+    }
+    }    
   }
-  }
+  
 
   async createSnapshot(logIndex) {
     const raft = this.runner.zmqRaft
     const compactionIndex = Math.min(raft.commitIndex, raft.pruneIndex);
-    console.log('+++ createSnapshot compactionIndex: ', compactionIndex)
-    console.log('+++ createSnapshot commitIndex: ', raft.commitIndex)
-    console.log('+++ createSnapshot pruneIndex: ', raft.pruneIndex)
+    //console.log('+++ createSnapshot compactionIndex: ', compactionIndex)
+    //console.log('+++ createSnapshot commitIndex: ', raft.commitIndex)
+    //console.log('+++ createSnapshot pruneIndex: ', raft.pruneIndex)
     const compactionTerm = await raft._log.termAt(compactionIndex);
     const readStream = this.stateHandler.createSnapshotReadStream();
     const snapshot = raft._log.createTmpSnapshot(compactionIndex, compactionTerm, readStream);
     const filename = await raft._log.installSnapshot(snapshot, true);
     console.log('-------------------------------- old snapshot file names: ')
-    await this.listPruneFiles(raft._log, logIndex);
+    const filesToDelete = await this.listPruneFiles(raft._log, logIndex);
+    console.log('-------------------------------- deleting snapshot files: ', filesToDelete)
+    if (filesToDelete) {
+      for (let filePath of filesToDelete) {
+        fs.unlink(filePath, (err) => {
+          if (err) {
+            console.error('Error deleting file:', err);
+          } else {
+            console.log('File deleted successfully');
+          }
+        })
+      }
+    }
   }
 
   listPruneFiles(fileLog, lastIndex) {
+    console.log('====///==== list prune file at directory; ', fileLog.logdir, ' and lastIndex is: ', lastIndex)
     return fileLog.findIndexFilePathOf(lastIndex)
-    .then(lastPath => {
-      console.log('=== lastPath is: ', lastPath)
-      if (!lastPath) return;
-      var lastName = path.basename(lastPath);
-      return FileLog.readIndexFileNames(fileLog.logdir, (filePath) => {
-        console.log('++++++ checking filename '+filePath)
-        if (path.basename(filePath) < lastName) {
-          process.stdout.write('******* can delete: '+filePath + "\n");
-          return true;
-        }
+      .then(lastPath => {
+        console.log('=== lastPath is: ', lastPath)
+        if (!lastPath) return;
+        var lastName = path.basename(lastPath);
+        return FileLog.readIndexFileNames(fileLog.logdir, (filePath) => {
+          console.log('++++++ checking filename ' + filePath)
+          if (path.basename(filePath) < lastName) {
+            process.stdout.write('******* can delete: ' + filePath + "\n");
+            return true;
+          }
+        });
       });
-    });
   }
 }

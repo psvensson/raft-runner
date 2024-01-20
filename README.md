@@ -17,7 +17,7 @@ Raft uses something called Log entries, which are essentialy commands which has 
 
 Let's say that you have already done all the work described here and have a Raft group consisting of three Peers (which is the minimum for things to work) and your own state machine implementation.
 
-Then one of the peers gets a request from a client (it might also have a web service interface), which results in some data that should be written to the database. Instead of writing directly to the database, the peer instance (where you have instantiated the RaftRunner object) uses the changeStateMachine() method to create a new log entry (which we assume will tell your state machine to write data to the database).
+Then one of the peers gets a request from a client (it might also have a web service interface), which results in some data that should be written to the database. Instead of writing directly to the database, the peer instance where you have instantiated the RaftRunner object, uses the changeStateMachine() method to create a new log entry which we assume will tell your state machine to write data to the database.
 
 The underlying logic will then call the handle() method on all three peers (including the instance we are talking about now) which will handle the log entry. It could be something simple like this: {command: 'write', data: [...]}. See the SimpleStateMachine class for an example.
 
@@ -26,7 +26,7 @@ The state machine also need implement the methods createSnapshotReadStream() and
 You think this is complicated? Not in comparison :D 
 
 ## Features
-- Implement dynamkic joining of peers, so you don't need either to hard-code or start from a CLI (unless you want to)
+- Implement dynamic joining of peers, so you don't need either to hard-code or start from a CLI (unless you want to)
 - Hiding most of the gnarly stuff so you don't need to understand Raft (so much) to be able to use it
 
 ## API
@@ -38,7 +38,7 @@ If our port and address does not exist in the provided lsit of existing peers, t
 
 ```raftRunner.changeStateMachine(data)```
 
-This methods sends a new log using the underlying Raft cluster, which relicates some kind of command that makes sense to your state machine
+This methods sends a new log using the underlying Raft cluster, which replicates some kind of command that makes sense to your state machine
 
 ```
 class myStateMachine {

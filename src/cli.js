@@ -18,9 +18,16 @@ console.log('id = '+arg_id);
 
 let incid = 0
 
-const raftRunner = new RaftRunner(arg_id, arg_path, arg_port, arg_peers, new SimpleStateHandler(), ipAddress);
+const raftRunner = new RaftRunner({
+    id: arg_id, 
+    path: arg_path, 
+    port: arg_port, 
+    peers: arg_peers, 
+    stateHandler: new SimpleStateHandler(), 
+    ipAddress: ipAddress,
+    snapshotInterval: 5}); // for testing, in reality, this would be every 1000 logs or so
 
-// This is jsut a debug method to check that state is set on the leader (and then of course replicated to the replicas)
+// This is just a debug method to check that state is set on the leader (and then of course replicated to the replicas)
 setInterval(()=> {
     console.log('--- handleInterval role is; ', raftRunner.raftState.toString())
     if (raftRunner.isLeader()) {

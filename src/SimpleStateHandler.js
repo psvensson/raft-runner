@@ -1,7 +1,8 @@
 const Readable = require('stream').Readable
 
 module.exports = class SimpleStateHandler {
-    constructor() {
+    constructor(opts) {
+        console.log('********************** statemachine constructor **********************', opts)
         this.state = {}
     }
 
@@ -15,7 +16,9 @@ module.exports = class SimpleStateHandler {
     }
 
     handleSnapshot(data) {
-        console.log("SimpleStateHandler handleSnapshot: " + data);
+        console.log('**********************')
+        console.log('********************** statemachine handle snapshot **********************', data)
+        console.log('**********************')
     }
 
     setState(id, value) {
@@ -24,6 +27,9 @@ module.exports = class SimpleStateHandler {
 
     // createSnapshotReadStream() should return an object implementing the stream.readStream protocol that will produce the snapshot's content.
     createSnapshotReadStream() {
+        console.log('**********************')
+        console.log('********************** statemachine createSnapshotReadStream **********************')
+        console.log('**********************')
         const readStream = new Readable({
             read() {
                 for(const prop in this.state) this.push({id: prop, value: this.state[prop]})
