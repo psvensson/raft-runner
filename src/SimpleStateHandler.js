@@ -7,8 +7,11 @@ module.exports = class SimpleStateHandler {
     }
 
     handle(data) {
-        console.log("SimpleStateHandler handle: " + data);
-        this.setState(data.id, data.value)
+        return new Promise((resolve, reject) => {
+            console.log('********************** statemachine handle **********************', data)
+            this.setState(data.id, data.value)
+            resolve()
+        })
     }
 
     raftStateChanged(state){

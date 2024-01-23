@@ -41,8 +41,6 @@ module.exports = class RaftRunner {
 
     // This is the way to send something to the state machine that means something to it
     changeStateMachine(data) {
-        // Not needed since we also get the state applied to us
-        //this.stateHandler.setState(id, value)
         this.clientSend(data)
     }
 
