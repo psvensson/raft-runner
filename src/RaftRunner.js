@@ -1,5 +1,5 @@
 const raft = require('zmq-raft');
-const stateMachine = require('./stateMachine');
+const stateMachine = require('./RunnerStateMachine');
 const { listeners } = require('process');
 
 module.exports = class RaftRunner {
