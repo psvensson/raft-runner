@@ -48,7 +48,7 @@ module.exports = class RaftRunner {
     handleRaftState(state, term) {
         console.log('--- handleRaftState: ', state, term)
         this.raftState = state
-        this.client.requestConfig(5000).then(peers => {
+        this.client.requestConfig(50000).then(peers => {
             console.log('--- handleRaftState: peers = ', peers)
             this.leaderId = peers.leaderId
         })
