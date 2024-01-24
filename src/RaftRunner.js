@@ -6,6 +6,7 @@ module.exports = class RaftRunner {
     constructor(args) {
         const { id, path, port, peers, stateHandler, ipAddress, snapshotInterval } = args;
         this.stateHandler = stateHandler
+        this.leaderId = undefined
         this.setUpProcessHandlers()
         const options = this.getOptions(id, path, port, peers, stateHandler, ipAddress, snapshotInterval);
         this.buildZmqRaft(options, id, peers, port);
@@ -47,8 +48,16 @@ module.exports = class RaftRunner {
     handleRaftState(state, term) {
         console.log('--- handleRaftState: ', state, term)
         this.raftState = state
+        this.client.requestConfig(5000).then(peers => {
+            console.log('--- handleRaftState: peers = ', peers)
+            this.leaderId = peers.leaderId
+        })
         this.stateMachine.stateHandler.raftStateChanged(state)
     }
+
+    leaderId() {
+        return this.leaderId
+    }   
 
     async clientSend(text) {
         const serializedTxData = Buffer.from(JSON.stringify(text));
