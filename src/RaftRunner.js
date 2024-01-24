@@ -1,5 +1,5 @@
 const raft = require('zmq-raft');
-const RunnerStateMachine = require('./RunnerStatemachine');
+const stateMachine = require('./stateMachine');
 const { listeners } = require('process');
 
 module.exports = class RaftRunner {
@@ -47,7 +47,7 @@ module.exports = class RaftRunner {
     handleRaftState(state, term) {
         console.log('--- handleRaftState: ', state, term)
         this.raftState = state
-        this.runnerStateMachine.stateHandler.raftStateChanged(state)
+        this.stateMachine.stateHandler.raftStateChanged(state)
     }
 
     async clientSend(text) {
@@ -93,8 +93,8 @@ module.exports = class RaftRunner {
                     options.stateHandler = stateHandler;
                     options.runner = runner;
                     options.snapshotInterval = snapshotInterval;
-                    this.runnerStateMachine = new RunnerStateMachine(options);
-                    return this.runnerStateMachine
+                    this.stateMachine = new stateMachine(options);
+                    return this.stateMachine
                 }
             },
             listeners: {
