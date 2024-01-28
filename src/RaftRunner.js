@@ -50,6 +50,7 @@ module.exports = class RaftRunner {
         this.raftState = state
         this.client.requestConfig(50000).then(peers => {
             console.log('--- handleRaftState: peers = ', peers)
+            this.peer = peers
             this.leaderId = peers.leaderId
             console.log('--- handleRaftState: isLeader = ', this.isLeader())
         })
@@ -60,6 +61,10 @@ module.exports = class RaftRunner {
     getLeaderId() {
         return this.leaderId
     }   
+
+    getPeers(){
+        return this.peers
+    }
 
     async clientSend(text) {
         const serializedTxData = Buffer.from(JSON.stringify(text));
