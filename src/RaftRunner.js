@@ -57,7 +57,7 @@ module.exports = class RaftRunner {
         this.stateMachine.stateHandler.raftStateChanged(state)
     }
 
-    leaderId() {
+    getLeaderId() {
         return this.leaderId
     }   
 
