@@ -50,7 +50,7 @@ module.exports = class RaftRunner {
         this.raftState = state
         this.client.requestConfig(50000).then(peers => {
             console.log('--- handleRaftState: peers = ', peers)
-            this.peer = peers
+            this.peers = peers
             this.leaderId = peers.leaderId
             console.log('--- handleRaftState: isLeader = ', this.isLeader())
         })
