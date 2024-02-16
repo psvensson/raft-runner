@@ -29,7 +29,7 @@ module.exports = class SimpleStateHandler {
     }
 
     // createSnapshotReadStream() should return an object implementing the stream.readStream protocol that will produce the snapshot's content.
-    createSnapshotReadStream() {
+    async createSnapshotReadStream() {
         console.log('**********************')
         console.log('********************** statemachine createSnapshotReadStream **********************')
         console.log('**********************')

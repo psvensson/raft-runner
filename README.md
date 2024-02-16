@@ -52,7 +52,7 @@ class myStateMachine {
         // generate a snapshot and interpret it (and set its state from it)
     }
 
-    createSnapshotReadStream() {
+    async createSnapshotReadStream() {
         // return an object implementing the stream.readStream protocol that will produce the snapshot's content
     }
 

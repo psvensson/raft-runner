@@ -87,7 +87,7 @@ module.exports = class RunnerStateMachine extends raft.api.StateMachineBase {
     //console.log('+++ createSnapshot commitIndex: ', raft.commitIndex)
     //console.log('+++ createSnapshot pruneIndex: ', raft.pruneIndex)
     const compactionTerm = await raft._log.termAt(compactionIndex);
-    const readStream = this.stateHandler.createSnapshotReadStream();
+    const readStream = await this.stateHandler.createSnapshotReadStream();
     const snapshot = raft._log.createTmpSnapshot(compactionIndex, compactionTerm, readStream);
     const filename = await raft._log.installSnapshot(snapshot, true);
     console.log('-------------------------------- old snapshot file names: ')
