@@ -45,11 +45,11 @@ module.exports = class RunnerStateMachine extends raft.api.StateMachineBase {
     }
   }
 
-  applyEntries(logEntries, nextIndex, currentTerm, snapshot) {
+  async applyEntries(logEntries, nextIndex, currentTerm, snapshot) {
     console.log('===== applyEntries, we got ' + logEntries.length + ' log entries, snapshot is: ', snapshot)
     if (snapshot) {
       //console.log('===== applyEntries, snapshot is: ', snapshot)
-      this.stateHandler.handleSnapshot(snapshot);
+      await this.stateHandler.handleSnapshot(snapshot);
     }
     
     const logEntriesArray = [];

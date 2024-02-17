@@ -18,7 +18,7 @@ module.exports = class SimpleStateHandler {
         console.log('SimpleStateHandler --- raftStateChanged: ', state)
     }
 
-    handleSnapshot(data) {
+    async handleSnapshot(data) {
         console.log('**********************')
         console.log('********************** statemachine handle snapshot **********************', data)
         console.log('**********************')
